@@ -5,11 +5,14 @@ from graph import Graph
 
 def build_bayesian_graph(bayesian_vars):
     Phi = Factor([], {})
-    for bayesian_var in bayesian_vars:
-        print(bayesian_var.split(" ; "))
-        name, parents, probs = bayesian_var.split(" ; ")
-        print(name, "|", parents, "|", probs)
-        print("'"+parents+"'")
+    # for bayesian_var in bayesian_vars:
+    #     # print(list(map(lambda s: s.strip(), bayesian_var.split(";"))))
+    #     name, parents, probs = list(map(lambda s: s.strip(), bayesian_var.split(";")))
+    #     parents = parents.split()
+    #     probs = [float(x) for x in probs.split()]
+    #     print(name + "|" + str(parents) + "|" + str(probs))
+    print(bayesian_vars)
+
 
 
 def main():
