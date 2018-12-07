@@ -1,7 +1,8 @@
 import parser
 from node import Node, Factor
 from graph import Graph
-from itertools import product
+from itertools import product, combinations
+from copy import deepcopy
 
 
 def build_bayesian_graph(bayesian_vars):
@@ -18,10 +19,8 @@ def build_bayesian_graph(bayesian_vars):
         name, parents, probs = bayesian_var
         phi = Factor([], {})
         phi.vars.append(name)
-        node_parents = {}
         for parent in parents:
             phi.vars.append(parent)  # Check if order matters
-            node_parents[parent] = None
             # print(parent)
         # parents = ["X","Y","Z"]
         # for stuff in product(range(2), repeat=len(parents)):
@@ -43,10 +42,10 @@ def build_bayesian_graph(bayesian_vars):
             phi.values[tuple(values0)] = 1 - probs[combination[0]]
             # print(probs[combination[0]])
         Phi.append(phi)
-        node = Node(name, node_parents, phi)
+        node = Node(name, parents, phi)
         # print(node)
         bayesian_graph.add_node(node)
-    bayesian_graph.fix_nodes_parents()
+    bayesian_graph.compute_edges()
     return bayesian_graph
 
 
@@ -56,7 +55,59 @@ def main():
     # print("\n\n", bayesian_graph)
     # print(bayesian_graph.edges)
     bayesian_graph.print_edges()  # TODO: REMOVE
-    
+
+    # 2.1: Build undirected graph U based on the Bayesian graph G
+    undirected_graph = bayesian_graph.make_undirected_copy()
+    undirected_graph.print_edges()
+    # print("\n", undirected_graph)
+    # print(str([parent.name for parent in undirected_graph.get_node_parents("C")]))
+
+    # 2.2: Build "moral" graph H based on U
+    for node in bayesian_graph.nodes.values():
+        u_parents = [undirected_graph.get_node(parent_name) for parent_name in node.parents]
+        if len(u_parents) < 2:
+            continue
+        # print([node.name for node in u_parents])
+        for combo in combinations(u_parents, 2):
+            node1, node2 = combo
+            if not undirected_graph.check_edge(node1, node2):
+                print("Added edge", node1.name, node2.name)
+                undirected_graph.add_edge(node1, node2)
+                # if node2.name not in node1.parents:
+                #     node1.parents.append(node2.name)
+                # if node1.name not in node2.parents:
+                #     node2.parents.append(node1.name)
+    undirected_graph.print_edges()
+
+    # 2.3: Build "chordal" graph H* based on H(the old U)
+    copy_graph = deepcopy(undirected_graph)
+    sorted_nodes = list(copy_graph.nodes.values())
+    sorted_nodes.sort(key=(lambda n: copy_graph.count_not_connected_parents(n.name)))
+    print("\n", undirected_graph)
+    print([node.name for node in sorted_nodes])
+    while sorted_nodes and copy_graph.count_not_connected_parents(sorted_nodes[-1].name) > 0:
+        node = sorted_nodes[0]
+        print(node.name, copy_graph.count_not_connected_parents(node.name))
+        for parents_name_combo in combinations(node.parents, 2):  # check if 2 by 2 parents are connected
+            parent_name1, parent_name2 = parents_name_combo
+            parent_node1, parent_node2 = copy_graph.nodes[parent_name1], copy_graph.nodes[parent_name2]
+            if not copy_graph.check_edge(parent_node1, parent_node2):  # if they are not linked
+                copy_graph.add_edge(parent_node1, parent_node2)  # add edge
+                # also add it to the H* graph
+                undirected_graph.add_edge(undirected_graph.nodes[parent_name1], undirected_graph.nodes[parent_name2])
+                # if parent_node1.name not in parent_node2.parents:
+                #     parent_node2.parents.append(parent_node1.name)  # update each neighbours/parents
+                # if parent_node2.name not in parent_node1.parents:
+                #     parent_node1.parents.append(parent_node2.name)
+        copy_graph.remove_node(node.name)
+        sorted_nodes = list(copy_graph.nodes.values())
+        sorted_nodes.sort(key=(lambda n: copy_graph.count_not_connected_parents(n.name)))
+    print(copy_graph)
+    print("\n", undirected_graph)
+    undirected_graph.print_edges()
+
+    # 2.4: Build "cliques" graph C using H*
+
 
 if __name__ == '__main__':
     main()

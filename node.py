@@ -5,7 +5,7 @@ Factor = namedtuple("Factor", ["vars", "values"])
 
 class Node:
     # name = ''  # This node's name
-    # parents = {}  # Dictionary of Nodes
+    # parents = []  # List of Node names
     # factor = None  # Factor with probabilities
 
     def __init__(self, name, parents, factor):
