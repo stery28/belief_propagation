@@ -6,11 +6,13 @@ class Graph:
     # nodes = {} # Dictionary of Nodes where key=Node.name, value=Node
     # edges = []  # Lsit of tuple of Nodes, e.g.: (Node1, Node2) represents the edge Node1 -> Node2
     # directed = True  # Boolean representing if the Graph is directed or not
+    # leafs = []  # List of Nodes
 
     def __init__(self, directed):
         self.nodes = {}
         self.edges = []
         self.directed = directed
+        self.leafs = None  # For BFS / Tree structure
 
     def add_node(self, node):
         self.nodes[node.name] = node
@@ -97,3 +99,40 @@ class Graph:
                 for node1, node2 in self.edges
             ]
         )
+
+    def fix_nodes_parents(self):
+        for node in self.nodes.values():
+            parents_copy = [parent for parent in node.parents]
+            for parent_name in parents_copy:
+                parent_node = self.get_node(parent_name)
+                if not self.check_edge(parent_node, node):
+                    node.parents.remove(parent_name)
+
+    def treeify(self):  # Create a tree hierarchy/structure
+        root = list(self.nodes.values())[0]
+        root.parent = None
+        visited = []
+        queue = []
+        leafs = []
+
+        visited.append(root)
+        queue.append(root)
+        while queue:
+            current = queue.pop(0)
+            unvisited_neighs = [node for node in self.nodes.values() if node.name in current.parents and node not in visited]
+            current.children = unvisited_neighs
+            if not unvisited_neighs:
+                leafs.append(current)
+            else:
+                for node in unvisited_neighs:
+                    visited.append(node)
+                    node.parent = current
+                    queue.append(node)
+        self.leafs = leafs
+
+    def print_tree(self, root=None, indent=1):
+        if root is None:
+            root = list(self.nodes.values())[0]
+        print("  "*indent + "-", root.name)
+        for child in root.children:
+            self.print_tree(child, indent+1)

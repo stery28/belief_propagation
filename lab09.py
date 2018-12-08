@@ -124,7 +124,7 @@ def variable_elimination(Phi, Z, verbose=False):
     return result
 
 
-def condition_factors(Phi : list, Z : dict, verbose=False):
+def condition_factors(Phi: list, Z: dict, verbose=False):
     # Cerinta 5
     result = []
     for phi in Phi:
@@ -146,7 +146,8 @@ def condition_factors(Phi : list, Z : dict, verbose=False):
             if not ok:
                 continue
             new_phi.values[value] = phi.values[value]
-        result.append(new_phi)
+        if len(new_phi.values) > 0:
+            result.append(new_phi)
         if verbose:
             print_factor(new_phi)
     return result

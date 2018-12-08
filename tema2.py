@@ -117,6 +117,28 @@ def kruskal(graph):
     return maxspangraph
 
 
+def message_dfs(root: Node, visited: list):
+    unvisited_children = [child for child in root.children if child not in visited]
+    for node in unvisited_children:
+        visited.append(node)
+        message = message_dfs(node, visited)
+        if not root.factor:  # If this node doesn't have a factor, use first valid one
+            print(root.name, "has no factor, adopting", message.vars if message else "None")
+            root.factor = message
+            continue
+        if message:
+            root.factor = multiply_factors(root.factor, message)  # multiply children messages
+    if root.parent and root.factor:  # project message and send it to parent
+        projection_vars = list(intersect_strings(root.name, root.parent.name))
+        projection_vars = [var for var in root.factor.vars if var not in projection_vars]
+        print(projection_vars, root.factor.vars, root.name, root.parent.name)
+        for var in projection_vars:
+            root.factor = sum_out(var, root.factor)
+        print(root.factor)
+        return root.factor
+    return None
+
+
 def main():
     bayesian_vars, required_probabilities, expected_probabilities = parser.read_input()
     bayesian_graph, Phi = build_bayesian_graph(bayesian_vars)
@@ -209,11 +231,47 @@ def main():
 
     # 2.5: Build maximum spanning tree/graph T using Kruskal on C
     maxspangraph = kruskal(cliques_graph)
+    maxspangraph.fix_nodes_parents()  # remove nodes that are not neighbours anymore from a Node's parents list
     debug_print_graph(maxspangraph)
 
     # 2.6: Convert probabilities to factors and associate these factors to each
     # node in the T graph/tree.
     # I've already done that at the 2.4 step
+
+    # 3.1: BFS to create tree hierarchy
+    maxspangraph.treeify()
+    # print("\n",
+    #       [node.name + "'s parent: " + (node.parent.name if node.parent else "None")
+    #        for node in maxspangraph.nodes.values()
+    #        ])
+    # maxspangraph.print_tree()
+
+    print(required_probabilities, "\n")
+    # print("\n", [node.factor for node in maxspangraph.nodes.values()])
+    for prob in required_probabilities:
+        # 3.2: Keep only the factors that meet Z = z
+        print(prob)
+        observed = prob.split("|")[1].strip()
+        observed = observed.split()
+        observed = [tuple(obs.split("=")) for obs in observed]  # [(val, var)]
+        observed = {obs[0]: int(obs[1]) for obs in observed}
+        # print(observed)
+        for node in maxspangraph.nodes.values():
+            if not node.factor:
+                continue
+            # print(condition_factors([node.factor], observed))
+            # print(node.factor, list(observed.keys()))
+            new_factor = condition_factors([node.factor], observed)
+            # print(new_factor, "for node", node.name)
+            if new_factor:
+                node.factor = new_factor[0]
+            else:
+                node.factor = None
+
+        # 3.3: Send messages from leafs to root
+        message_dfs(list(maxspangraph.nodes.values())[0], [])
+        # break
+    print([node.factor for node in maxspangraph.nodes.values()])
 
 
 def debug_print_graph(graph, path='graph.txt'):
