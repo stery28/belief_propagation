@@ -1,8 +1,3 @@
-from collections import namedtuple
-
-Factor = namedtuple("Factor", ["vars", "values"])
-
-
 class Node:
     # name = ''  # This node's name
     # parents = []  # List of Node names

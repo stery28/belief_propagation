@@ -1,5 +1,6 @@
 import parser
-from node import Node, Factor
+from lab09 import *
+from node import Node
 from graph import Graph
 from itertools import product, combinations
 from copy import deepcopy, copy
@@ -68,54 +69,6 @@ def bron_kerbosch(cliques, r, p, x):
         )
         p.remove(node)
         x.append(node)
-
-
-def multiply_factors(phi1, phi2):  # from lab09
-    assert isinstance(phi1, Factor) and isinstance(phi2, Factor)
-    # Cerinta 1 :
-    variables = phi1.vars + [var for var in phi2.vars if var not in phi1.vars]
-    result = Factor(variables, {})
-    phi1_enum = list(enumerate(phi1.vars))
-    phi2_enum = list(enumerate(phi2.vars))
-    common_variables = [var for var in phi2.vars if var in phi1.vars]
-    for value1, p1 in phi1.values.items():
-        for value2, p2 in phi2.values.items():
-            # values = []
-            # print("Trying tuples " + str(value1) + ", " + str(value2))
-            ok = True
-            for var in variables:
-                if var in common_variables:
-                    var_index1 = 0
-                    var_index2 = 0
-                    for elem in phi1_enum:
-                        if elem[1] == var:
-                            var_index1 = elem[0]
-                            break
-                    for elem in phi2_enum:
-                        if elem[1] == var:
-                            var_index2 = elem[0]
-                    # print(var + " " + str(var_index1) + " " + str(var_index2))
-                    if value1[var_index1] != value2[var_index2]:
-                        ok = False  # values are different for the common variable(s)
-                        break
-            if not ok:
-                continue
-            values = list(value1)
-            for var in phi2.vars:
-                if var in phi1.vars:
-                    continue
-                var_index = 0
-                for elem in phi2_enum:
-                    if elem[1] == var:
-                        var_index = elem[0]
-                        break
-                values.append(value2[var_index])
-            values = tuple(values)
-            # print(str(values) + " " + str(value1) +
-            #       " " + str(value2) + " " + str(p1) + " " + str(p2))
-            result.values[values] = p1 * p2
-
-    return result
 
 
 def intersect_strings(str1, str2):  # get intersection of the two strings
