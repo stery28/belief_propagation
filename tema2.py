@@ -2,7 +2,7 @@ import parser
 from node import Node, Factor
 from graph import Graph
 from itertools import product, combinations
-from copy import deepcopy
+from copy import deepcopy, copy
 
 
 def build_bayesian_graph(bayesian_vars):
@@ -47,6 +47,27 @@ def build_bayesian_graph(bayesian_vars):
         bayesian_graph.add_node(node)
     bayesian_graph.compute_edges()
     return bayesian_graph
+
+
+def bron_kerbosch(cliques, r, p, x):
+    if not p and not x:
+        cliques.append(r)
+    p_copy = copy(p)  # I was losing values because I was removing from the same list I was iterating through
+    for node in p_copy:
+        print(
+            "going to check for r=", ''.join([n.name for n in r] + [node.name]),
+            "with new p=", ''.join([n.name for n in p if n.name in node.parents]),
+            node.name + "'s parents=", [parent for parent in node.parents],
+            "; current p:", [n.name for n in p]
+        )
+        bron_kerbosch(
+            cliques,
+            r + [node],
+            [neigh for neigh in p if neigh.name in node.parents],
+            [neigh for neigh in x if neigh.name in node.parents]
+        )
+        p.remove(node)
+        x.append(node)
 
 
 def main():
@@ -107,6 +128,10 @@ def main():
     undirected_graph.print_edges()
 
     # 2.4: Build "cliques" graph C using H*
+    cliques = []
+    bron_kerbosch(cliques, [], list(undirected_graph.nodes.values()), [])
+    print("\n", undirected_graph, "\n")
+    print([''.join([node.name for node in clique]) for clique in cliques])
 
 
 if __name__ == '__main__':
