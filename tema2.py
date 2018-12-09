@@ -117,11 +117,12 @@ def kruskal(graph):
     return maxspangraph
 
 
-def message_dfs(root: Node, visited: list):
+def gather_messages(root: Node, visited: list):  # DFS so the root can wait for all the messages from its children
     unvisited_children = [child for child in root.children if child not in visited]
     for node in unvisited_children:
         visited.append(node)
-        message = message_dfs(node, visited)
+        message = gather_messages(node, visited)
+        root.messages[node.name] = deepcopy(message)  # Save message for the next propagation step(3.4)
         if not root.factor:  # If this node doesn't have a factor, use first valid one
             print(root.name, "has no factor, adopting", message.vars if message else "None")
             root.factor = message
@@ -142,6 +143,27 @@ def message_dfs(root: Node, visited: list):
         print(root.factor)
         return root.factor
     return None
+
+
+def scatter_messages(root: Node, parent_message: Factor):
+    if root.parent:
+        # this node has a parent, so we must multiply the parent_message
+        root.factor = multiply_factors(root.factor, parent_message)
+    print("\n\n", root, "\n")
+    for child in root.children:
+        reversed_child_factor = root.messages[child.name]
+        # print("initial values: ", list(reversed_child_factor.values.values()))
+        for val in reversed_child_factor.values:
+            reversed_child_factor.values[val] = 1/reversed_child_factor.values[val]
+            # ^^ so that we can apply multiply_factors and obtain the result of a division
+        # print("after values: ", list(reversed_child_factor.values.values()))
+        message = multiply_factors(root.factor, reversed_child_factor)  # root.phi / child_message
+        not_common_vars = [var for var in message.vars if var not in intersect_strings(root.name, child.name)]
+        # print(not_common_vars)
+        for var in not_common_vars:
+            message = sum_out(var, message)  # Projection
+        # Message is now ready to be sent to child
+        scatter_messages(child, message)
 
 
 def main():
@@ -274,9 +296,35 @@ def main():
                 node.factor = None
 
         # 3.3: Send messages from leafs to root
-        message_dfs(list(maxspangraph.nodes.values())[0], [])
+        gather_messages(list(maxspangraph.nodes.values())[0], [])
+        # 3.4: Send messages from root to leafs
+        scatter_messages(list(maxspangraph.nodes.values())[0], None)
+        # 3.5: Compute required prob
+        required_phi = None
+        conditions = prob.split("|")[0].strip()
+        conditions = conditions.split()
+        conditions = [tuple(condition.split("=")) for condition in conditions]
+        conditions = {condition[0]: condition[1] for condition in conditions}
+        conditions_vars = ''.join(list(conditions.keys()))
+        print(conditions, "||", conditions_vars)
+        for node in maxspangraph.nodes.values():
+            if contains_string(''.join(node.factor.vars), conditions_vars):
+                print("Found: ", node.factor.vars)
+                if not required_phi:
+                    required_phi = node.factor
+                else:
+                    required_phi = multiply_factors(required_phi, node.factor)
+        print(required_phi.vars)
+        removable_vars = [var for var in required_phi.vars if var not in conditions_vars]
+        print(removable_vars)
+        for var in removable_vars:
+            required_phi = sum_out(var, required_phi)
+        s = sum(required_phi.values.values())
+        required_phi = Factor(required_phi.vars, {k: v/s for k, v in required_phi.values.items()})
+        print(required_phi)
         break
-    print([node.factor for node in maxspangraph.nodes.values()])
+    print([node.factor.vars for node in maxspangraph.nodes.values()])
+    print("\n", [{child: message.vars for child, message in node.messages.items()} for node in maxspangraph.nodes.values()])
 
 
 def debug_print_graph(graph, path='graph.txt'):
