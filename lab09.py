@@ -65,6 +65,7 @@ def multiply_factors(phi1, phi2):
 
 
 def sum_out(var, phi):
+    # print(var, phi)
     assert isinstance(phi, Factor) and var in phi.vars
     # Cerinta 2:
     var_index = 0
@@ -95,16 +96,25 @@ def prod_sum(var, Phi, verbose=False):
         # print(phi)
         if var not in phi.vars:
             result.append(phi)
+            if verbose:
+                print(phi)
+            continue
         if tmp_phi is None and var in phi.vars:
             tmp_phi = phi
+            if verbose:
+                print(tmp_phi)
             continue
         if var in phi.vars:
             tmp_phi = multiply_factors(tmp_phi, phi)
+            if verbose:
+                print(tmp_phi)
         # print(tmp_phi)
-    result.append(sum_out(var, tmp_phi))
+    # print(var, tmp_phi)
+    if tmp_phi:
+        result.append(sum_out(var, tmp_phi))
+        if verbose:
+            print(sum_out(var, tmp_phi))
     # print(result)
-    if verbose:
-        print_factor(sum_out(var, tmp_phi))
 
     return result
 
@@ -128,19 +138,11 @@ def condition_factors(Phi: list, Z: dict, verbose=False):
     # Cerinta 5
     result = []
     for phi in Phi:
-        ok = True
-        for z in Z:
-            if z not in phi.vars:  # Check if phi contains all vars in Z
-                ok = False
-                break
-        if not ok:
-            continue
-
         new_phi = Factor(deepcopy(phi.vars), {})
         for value in phi.values:
             ok = True
             for z in Z:
-                if value[phi.vars.index(z)] != Z[z]:
+                if z in phi.vars and value[phi.vars.index(z)] != Z[z]:
                     ok = False
                     break
             if not ok:

@@ -128,12 +128,17 @@ def message_dfs(root: Node, visited: list):
             continue
         if message:
             root.factor = multiply_factors(root.factor, message)  # multiply children messages
+    if root.factor and not root.factor.vars:
+        root.factor = None
     if root.parent and root.factor:  # project message and send it to parent
         projection_vars = list(intersect_strings(root.name, root.parent.name))
+        # projection_vars = list(root.name)
         projection_vars = [var for var in root.factor.vars if var not in projection_vars]
         print(projection_vars, root.factor.vars, root.name, root.parent.name)
         for var in projection_vars:
             root.factor = sum_out(var, root.factor)
+        if not root.factor.vars:
+            root.factor = None
         print(root.factor)
         return root.factor
     return None
@@ -270,7 +275,7 @@ def main():
 
         # 3.3: Send messages from leafs to root
         message_dfs(list(maxspangraph.nodes.values())[0], [])
-        # break
+        break
     print([node.factor for node in maxspangraph.nodes.values()])
 
 
