@@ -1,3 +1,6 @@
+from lab09 import print_factor
+
+
 class Node:
     # name = ''  # This node's name
     # parents = []  # List of Node names
@@ -20,7 +23,7 @@ class Node:
     def __str__(self):
         return "Node Name: " + self.name + \
                ", Parents: " + str(self.parents) + \
-               ", Factor: " + str(self.factor) + \
+               ", Factor: " + print_factor(self.factor) + \
                ", Parent: " + (self.parent.name if self.parent else "None") + \
                ", Children: " + str([child.name for child in self.children]) + \
                ", Messages: " + str({child: message.vars for child, message in self.messages.items()})

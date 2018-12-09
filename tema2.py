@@ -105,51 +105,49 @@ def kruskal(graph):
 
 def gather_messages(root: Node, visited: list):  # DFS so the root can wait for all the messages from its children
     unvisited_children = [child for child in root.children if child not in visited]
-    for node in unvisited_children:
-        visited.append(node)
-        message = gather_messages(node, visited)
-        root.messages[node.name] = deepcopy(message)  # Save message for the next propagation step(3.4)
-        if not root.factor:  # If this node doesn't have a factor, use first valid one
-            # print(root.name, "has no factor, adopting", message.vars if message else "None")
-            root.factor = message
+    new_phi = None
+    for child in unvisited_children:
+        visited.append(child)
+        message = gather_messages(child, visited)
+        root.messages[child.name] = message  # Save the message for step 3.4
+        if not new_phi:
+            new_phi = message
             continue
-        if message:
-            root.factor = multiply_factors(root.factor, message)  # multiply children messages
-    if root.factor and not root.factor.vars:
-        root.factor = None
-    if root.parent and root.factor:  # project message and send it to parent
-        projection_vars = list(intersect_strings(root.name, root.parent.name))
-        # projection_vars = list(root.name)
-        projection_vars = [var for var in root.factor.vars if var not in projection_vars]
-        # print(projection_vars, root.factor.vars, root.name, root.parent.name)
-        for var in projection_vars:
-            root.factor = sum_out(var, root.factor)
-        if not root.factor.vars:
-            root.factor = None
-        # print(root.factor)
-        return root.factor
+        elif message:
+            new_phi = multiply_factors(new_phi, message)
+    if new_phi and root.factor:
+        new_phi = multiply_factors(new_phi, root.factor)
+        root.factor = new_phi
+    elif new_phi:
+        root.factor = new_phi
+    if root.factor and root.parent:  # If this Node has a parent and a factor to project
+        not_common_vars = [var for var in root.factor.vars if var not in intersect_strings(root.name, root.parent.name)]
+        my_message = deepcopy(root.factor)
+        for var in not_common_vars:
+            my_message = sum_out(var, my_message)
+        return my_message
     return None
 
 
 def scatter_messages(root: Node, parent_message: Factor):
     if root.parent:
-        # this node has a parent, so we must multiply the parent_message
-        root.factor = multiply_factors(root.factor, parent_message)
-    # print("\n\n", root, "\n")
+        if root.factor and parent_message:
+            root.factor = multiply_factors(root.factor, parent_message)
+        elif parent_message:
+            root.factor = parent_message
     for child in root.children:
-        reversed_child_factor = root.messages[child.name]
-        # print("initial values: ", list(reversed_child_factor.values.values()))
-        for val in reversed_child_factor.values:
-            reversed_child_factor.values[val] = 1/reversed_child_factor.values[val]
-            # ^^ so that we can apply multiply_factors and obtain the result of a division
-        # print("after values: ", list(reversed_child_factor.values.values()))
-        message = multiply_factors(root.factor, reversed_child_factor)  # root.phi / child_message
-        not_common_vars = [var for var in message.vars if var not in intersect_strings(root.name, child.name)]
-        # print(not_common_vars)
+        my_message = deepcopy(root.factor)
+        inverted_child_message = deepcopy(root.messages[child.name])
+        for value in inverted_child_message.values:
+            inverted_child_message.values[value] = 1/inverted_child_message.values[value]  # So that we can use multiply
+        # print("*"*50)
+        my_message = multiply_factors(my_message, inverted_child_message)  # phi / message
+        not_common_vars = [var for var in my_message.vars if var not in intersect_strings(root.name, child.name)]
+        # print(not_common_vars, root.name, child.name)
         for var in not_common_vars:
-            message = sum_out(var, message)  # Projection
-        # Message is now ready to be sent to child
-        scatter_messages(child, message)
+            my_message = sum_out(var, my_message)  # Project
+        # print_factor(my_message)
+        scatter_messages(child, my_message)
 
 
 def main():
@@ -250,13 +248,20 @@ def main():
             # print(new_factor, "for node", node.name)
             if new_factor:
                 node.factor = new_factor[0]
+                # print_factor(node.factor)
             else:
                 node.factor = None
 
         # 3.3: Send messages from leafs to root
         gather_messages(list(copy_graph.nodes.values())[0], [])
+        # print("\n\n", 20*"-", "After GATHER", 20*"-", "\n")
+        # for node in copy_graph.nodes.values():
+        #     print_factor(node.factor)
         # 3.4: Send messages from root to leafs
         scatter_messages(list(copy_graph.nodes.values())[0], None)
+        # print("\n\n", 20 * "-", "After SCATTER", 20 * "-", "\n")
+        # for node in copy_graph.nodes.values():
+        #     print_factor(node.factor)
         # 3.5: Compute required prob
         required_phi = None
         conditions = prob.split("|")[0].strip()
@@ -265,22 +270,23 @@ def main():
         conditions = {condition[0]: condition[1] for condition in conditions}
         conditions_vars = ''.join(list(conditions.keys()))
         print(conditions, "||", conditions_vars)
+
         for node in copy_graph.nodes.values():
-            for var in conditions_vars:
-                if var in node.factor.vars:
-                    print("Found: ", node.factor.vars)
-                    if not required_phi:
-                        required_phi = node.factor
-                    else:
-                        required_phi = multiply_factors(required_phi, node.factor)
-        print(required_phi.vars)
-        removable_vars = [var for var in required_phi.vars if var not in conditions_vars]
-        print(removable_vars)
-        for var in removable_vars:
+            if node.factor:
+                for var in node.factor.vars:
+                    if var in conditions_vars:
+                        if not required_phi:
+                            required_phi = deepcopy(node.factor)
+                        else:
+                            required_phi = multiply_factors(required_phi, node.factor)
+                        break
+        other_vars = [var for var in required_phi.vars if var not in conditions_vars]
+        for var in other_vars:
             required_phi = sum_out(var, required_phi)
+
         s = sum(required_phi.values.values())
         required_phi = Factor(required_phi.vars, {k: v/s for k, v in required_phi.values.items()})
-        print(required_phi)
+        print_factor(required_phi)
         # break
     # print([node.factor.vars for node in copy_graph.nodes.values()])
     # print("\n", [{child: message.vars for child, message in node.messages.items()} for node in copy_graph.nodes.values()])
