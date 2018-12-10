@@ -122,6 +122,7 @@ def gather_messages(root: Node, visited: list):  # DFS so the root can wait for 
         root.factor = new_phi
     if root.factor and root.parent:  # If this Node has a parent and a factor to project
         not_common_vars = [var for var in root.factor.vars if var not in intersect_strings(root.name, root.parent.name)]
+        # print("AAAAAAA", not_common_vars, root.name, root.parent.name, root.factor.vars)
         my_message = deepcopy(root.factor)
         for var in not_common_vars:
             my_message = sum_out(var, my_message)
@@ -271,15 +272,22 @@ def main():
         conditions_vars = ''.join(list(conditions.keys()))
         print(conditions, "||", conditions_vars)
 
+        # for node in copy_graph.nodes.values():
+        #     if node.factor:
+        #         for var in node.factor.vars:
+        #             if var in conditions_vars:
+        #                 if not required_phi:
+        #                     required_phi = deepcopy(node.factor)
+        #                 else:
+        #                     required_phi = multiply_factors(required_phi, node.factor)
+        #                 break
         for node in copy_graph.nodes.values():
             if node.factor:
-                for var in node.factor.vars:
-                    if var in conditions_vars:
-                        if not required_phi:
-                            required_phi = deepcopy(node.factor)
-                        else:
-                            required_phi = multiply_factors(required_phi, node.factor)
-                        break
+                if contains_string(''.join(node.factor.vars), conditions_vars):
+                    print("Found one")
+                    required_phi = deepcopy(node.factor)
+                    break
+        print_factor(required_phi)
         other_vars = [var for var in required_phi.vars if var not in conditions_vars]
         for var in other_vars:
             required_phi = sum_out(var, required_phi)
@@ -287,7 +295,7 @@ def main():
         s = sum(required_phi.values.values())
         required_phi = Factor(required_phi.vars, {k: v/s for k, v in required_phi.values.items()})
         print_factor(required_phi)
-        # break
+        break
     # print([node.factor.vars for node in copy_graph.nodes.values()])
     # print("\n", [{child: message.vars for child, message in node.messages.items()} for node in copy_graph.nodes.values()])
 
