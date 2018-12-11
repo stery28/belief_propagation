@@ -202,7 +202,6 @@ def main():
     # 2.5: Build maximum spanning tree/graph T using Kruskal on C
     maxspangraph = kruskal(cliques_graph)
     maxspangraph.fix_nodes_parents()  # remove nodes that are not neighbours anymore from a Node's parents list
-    debug_print_graph(maxspangraph)
 
     # 2.6: Convert probabilities to factors and associate these factors to each
     # node in the T graph/tree.

@@ -16,7 +16,7 @@ Clasa Node contine:
 	- children - o lista de obiecte Node care reprezinta nodurile copil ai nodului curent(folosita in arbori)
 	- messages - un dictionar de forma {nume_nod: Factor} pentru indexarea mesajelor primite de un nod de la copii sai in etapa de propagare frunze -> radacina, pentru ca mai apoi factorul final al nodului sa fie impartit la acest mesaj in etapa de propagare radacina -> frunze(si apoi proiectat si trimis la copii)
 
-Am gandit etapa de propagare frunze -> radacina ca un algoritm DFS recursiv pentru un nod sa poata astepta dupa mesajele tuturor copiilor sai.
-Etapa de propagare radacina -> frunze este tot un DFS recursiv pentru a putea pasa ca argument mesajul pe care copilul sa il preia.
+Am gandit etapa de propagare frunze -> radacina ca un algoritm DFS recursiv pentru un nod sa poata astepta dupa mesajele tuturor copiilor sai(gather_messages).
+Etapa de propagare radacina -> frunze este tot un DFS recursiv pentru a putea pasa ca argument mesajul pe care copilul sa il preia(scatter_messages).
 
 Am 6 rezultate corecte, iar celelalte, in principiu dau probabilitati cat de cat apropiate(cu exceptia a 2 probabilitati cred care sunt destul de diferite fata de cele corecte). N-am reusit sa imi dau seama unde este greseala :(
