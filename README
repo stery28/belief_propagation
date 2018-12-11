@@ -1,0 +1,22 @@
+Sterian Cosmin-Cristian, 341C4
+
+In principiu am respectat instructiunile din enuntul temei si m-am folosit de functiile din laboratorul 9.
+
+Am reprezentat grafurile si arborii ca obiecte ale clasei Graph, care contin:
+	- nodes - un dictionar de noduri {nume_nod: Node(obiect de tip Node)}
+	- edges - o lista de tupluri de noduri Node (Node1, Node2) = Node1 -> Node2
+	- directed - un boolean care reprezinta daca graful e orientat sau nu
+	- leafs - o lista de noduri Node, utila pentru structura de tip arbore
+
+Clasa Node contine:
+	- name - numele nodului
+	- parents - o lista de noduri Node(initial era o lista cu noduri parinti in graful orientat, ulterior am folosit-o pe post de lista cu vecinii nodului in graf neorientat si arbore)
+	- factor - un obiect de tip Factor ce reprezinta factorul nodului(util in graful/arborele de clici)
+	- parent - un obiect Node care reprezinta parintele intr-o ierarhie tip arbore
+	- children - o lista de obiecte Node care reprezinta nodurile copil ai nodului curent(folosita in arbori)
+	- messages - un dictionar de forma {nume_nod: Factor} pentru indexarea mesajelor primite de un nod de la copii sai in etapa de propagare frunze -> radacina, pentru ca mai apoi factorul final al nodului sa fie impartit la acest mesaj in etapa de propagare radacina -> frunze(si apoi proiectat si trimis la copii)
+
+Am gandit etapa de propagare frunze -> radacina ca un algoritm DFS recursiv pentru un nod sa poata astepta dupa mesajele tuturor copiilor sai(gather_messages).
+Etapa de propagare radacina -> frunze este tot un DFS recursiv pentru a putea pasa ca argument mesajul pe care copilul sa il preia(scatter_messages).
+
+Am 6 rezultate corecte, iar celelalte, in principiu dau probabilitati cat de cat apropiate(cu exceptia a 2 probabilitati cred care sunt destul de diferite fata de cele corecte). N-am reusit sa imi dau seama unde este greseala :(
