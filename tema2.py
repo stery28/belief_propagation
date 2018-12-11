@@ -270,7 +270,7 @@ def main():
         conditions = [tuple(condition.split("=")) for condition in conditions]
         conditions = {condition[0]: condition[1] for condition in conditions}
         conditions_vars = ''.join(list(conditions.keys()))
-        print(conditions, "||", conditions_vars)
+        # print(conditions, "||", conditions_vars)
 
         # for node in copy_graph.nodes.values():
         #     if node.factor:
@@ -284,18 +284,27 @@ def main():
         for node in copy_graph.nodes.values():
             if node.factor:
                 if contains_string(''.join(node.factor.vars), conditions_vars):
-                    print("Found one")
+                    # print("Found one")
                     required_phi = deepcopy(node.factor)
                     break
-        print_factor(required_phi)
+        if not required_phi:
+            continue  # Bonus reached
+        s = sum(required_phi.values.values())
+        required_phi = Factor(required_phi.vars, {k: v / s for k, v in required_phi.values.items()})  # Normalize
+        # print_factor(required_phi)
+        # print_factor(required_phi)
         other_vars = [var for var in required_phi.vars if var not in conditions_vars]
         for var in other_vars:
             required_phi = sum_out(var, required_phi)
 
-        s = sum(required_phi.values.values())
-        required_phi = Factor(required_phi.vars, {k: v/s for k, v in required_phi.values.items()})
-        print_factor(required_phi)
-        break
+        required_value = []
+        for var in required_phi.vars:
+            required_value.append(int(conditions[var]))
+        required_value = tuple(required_value)
+        # print(required_value, required_phi)
+        print("Required value:", required_phi.values[required_value])
+        print("Expected:", expected_probabilities[required_probabilities.index(prob)])
+        # break
     # print([node.factor.vars for node in copy_graph.nodes.values()])
     # print("\n", [{child: message.vars for child, message in node.messages.items()} for node in copy_graph.nodes.values()])
 
