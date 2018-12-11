@@ -7,11 +7,9 @@ def read_input(path='bn1'):
 
     bayesian_vars = []
     for bayesian_var in tmp_bayesian_vars:
-        # print(list(map(lambda s: s.strip(), bayesian_var.split(";"))))
         name, parents, probs = list(map(lambda s: s.strip(), bayesian_var.split(";")))
         parents = parents.split()
         probs = [float(x) for x in probs.split()]
-        # print(name + "|" + str(parents) + "|" + str(probs))
         bayesian_vars.append((name, parents, probs))
 
     input_file.close()

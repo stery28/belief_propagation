@@ -41,12 +41,6 @@ def bron_kerbosch(cliques, r, p, x):
         cliques.append(r)
     p_copy = copy(p)  # I was losing values because I was removing from the same list I was iterating through
     for node in p_copy:
-        # print(
-        #     "going to check for r=", ''.join([n.name for n in r] + [node.name]),
-        #     "with new p=", ''.join([n.name for n in p if n.name in node.parents]),
-        #     node.name + "'s parents=", [parent for parent in node.parents],
-        #     "; current p:", [n.name for n in p]
-        # )
         bron_kerbosch(
             cliques,
             r + [node],
@@ -80,13 +74,11 @@ def kruskal(graph):
         if (node2, node1) not in ordered_edges:
             ordered_edges.append(edge)
     ordered_edges.sort(reverse=True, key=(lambda e: len(intersect_strings(e[0].name, e[1].name))))
-    # print([node1.name + "->" + node2.name for (node1, node2) in ordered_edges])
     for edge in ordered_edges:
         node1, node2 = edge
         group1 = []
         group2 = []
         for group in groups:
-            # print(group)
             if node1 in group:
                 group1 = group
             if node2 in group:
@@ -95,10 +87,8 @@ def kruskal(graph):
                 break
         if group1 == group2:
             continue
-        # print(list(map(lambda n: n.name, group1)), list(map(lambda n: n.name, group2)))
         group1 += group2
         groups.remove(group2)
-        # print([n.name for n in group1])
         maxspangraph.add_edge(node1, node2)
     return maxspangraph
 
@@ -122,7 +112,6 @@ def gather_messages(root: Node, visited: list):  # DFS so the root can wait for 
         root.factor = new_phi
     if root.factor and root.parent:  # If this Node has a parent and a factor to project
         not_common_vars = [var for var in root.factor.vars if var not in intersect_strings(root.name, root.parent.name)]
-        # print("AAAAAAA", not_common_vars, root.name, root.parent.name, root.factor.vars)
         my_message = deepcopy(root.factor)
         for var in not_common_vars:
             my_message = sum_out(var, my_message)
@@ -141,13 +130,10 @@ def scatter_messages(root: Node, parent_message: Factor):
         inverted_child_message = deepcopy(root.messages[child.name])
         for value in inverted_child_message.values:
             inverted_child_message.values[value] = 1/inverted_child_message.values[value]  # So that we can use multiply
-        # print("*"*50)
         my_message = multiply_factors(my_message, inverted_child_message)  # phi / message
         not_common_vars = [var for var in my_message.vars if var not in intersect_strings(root.name, child.name)]
-        # print(not_common_vars, root.name, child.name)
         for var in not_common_vars:
             my_message = sum_out(var, my_message)  # Project
-        # print_factor(my_message)
         scatter_messages(child, my_message)
 
 
@@ -198,7 +184,6 @@ def main():
         node_name = ''.join(sorted_nodes_list)
         node_phi = None
         for phi in Phi:  # Compute a factor for each node in C
-            # print(node_name, phi.vars, contains_string(node_name, phi.vars))
             if contains_string(node_name, phi.vars):
                 # phi contains only vars from this Node
                 if node_phi is None:
@@ -225,11 +210,6 @@ def main():
 
     # 3.1: BFS to create tree hierarchy
     maxspangraph.treeify()
-    # print("\n",
-    #       [node.name + "'s parent: " + (node.parent.name if node.parent else "None")
-    #        for node in maxspangraph.nodes.values()
-    #        ])
-    # maxspangraph.print_tree()
 
     for prob in required_probabilities:
         copy_graph = deepcopy(maxspangraph)
@@ -239,30 +219,19 @@ def main():
         observed = observed.split()
         observed = [tuple(obs.split("=")) for obs in observed]  # [(val, var)]
         observed = {obs[0]: int(obs[1]) for obs in observed}
-        # print(observed)
         for node in copy_graph.nodes.values():
             if not node.factor:
                 continue
-            # print(condition_factors([node.factor], observed))
-            # print(node.factor, list(observed.keys()))
             new_factor = condition_factors([node.factor], observed)
-            # print(new_factor, "for node", node.name)
             if new_factor:
                 node.factor = new_factor[0]
-                # print_factor(node.factor)
             else:
                 node.factor = None
 
         # 3.3: Send messages from leafs to root
         gather_messages(list(copy_graph.nodes.values())[0], [])
-        # print("\n\n", 20*"-", "After GATHER", 20*"-", "\n")
-        # for node in copy_graph.nodes.values():
-        #     print_factor(node.factor)
         # 3.4: Send messages from root to leafs
         scatter_messages(list(copy_graph.nodes.values())[0], None)
-        # print("\n\n", 20 * "-", "After SCATTER", 20 * "-", "\n")
-        # for node in copy_graph.nodes.values():
-        #     print_factor(node.factor)
         # 3.5: Compute required prob
         required_phi = None
         conditions = prob.split("|")[0].strip()
@@ -270,17 +239,7 @@ def main():
         conditions = [tuple(condition.split("=")) for condition in conditions]
         conditions = {condition[0]: condition[1] for condition in conditions}
         conditions_vars = ''.join(list(conditions.keys()))
-        # print(conditions, "||", conditions_vars)
 
-        # for node in copy_graph.nodes.values():
-        #     if node.factor:
-        #         for var in node.factor.vars:
-        #             if var in conditions_vars:
-        #                 if not required_phi:
-        #                     required_phi = deepcopy(node.factor)
-        #                 else:
-        #                     required_phi = multiply_factors(required_phi, node.factor)
-        #                 break
         for node in copy_graph.nodes.values():
             if node.factor:
                 if contains_string(''.join(node.factor.vars), conditions_vars):
@@ -291,8 +250,6 @@ def main():
             continue  # Bonus reached
         s = sum(required_phi.values.values())
         required_phi = Factor(required_phi.vars, {k: v / s for k, v in required_phi.values.items()})  # Normalize
-        # print_factor(required_phi)
-        # print_factor(required_phi)
         other_vars = [var for var in required_phi.vars if var not in conditions_vars]
         for var in other_vars:
             required_phi = sum_out(var, required_phi)
@@ -301,12 +258,8 @@ def main():
         for var in required_phi.vars:
             required_value.append(int(conditions[var]))
         required_value = tuple(required_value)
-        # print(required_value, required_phi)
         print("Required value:", required_phi.values[required_value])
         print("Expected:", expected_probabilities[required_probabilities.index(prob)])
-        # break
-    # print([node.factor.vars for node in copy_graph.nodes.values()])
-    # print("\n", [{child: message.vars for child, message in node.messages.items()} for node in copy_graph.nodes.values()])
 
 
 def debug_print_graph(graph, path='graph.txt'):

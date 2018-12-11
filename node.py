@@ -27,5 +27,3 @@ class Node:
                ", Parent: " + (self.parent.name if self.parent else "None") + \
                ", Children: " + str([child.name for child in self.children]) + \
                ", Messages: " + str({child: message.vars for child, message in self.messages.items()})
-
-    # def get_intersect(self, node):  # Dunno what I meant to do

@@ -16,8 +16,6 @@ class Graph:
 
     def add_node(self, node):
         self.nodes[node.name] = node
-        # for parent in node.parents:
-        #     self.add_edge(parent, node)
 
     def add_edge(self, node1, node2):
         self.edges.append((node1, node2))
@@ -40,7 +38,6 @@ class Graph:
     def make_undirected_copy(self):
         undirected_copy = Graph(False)
         undirected_copy.nodes = deepcopy(self.nodes)
-        # TODO: Optimize with deepcopy argument/Boolean check, maybe only deepcopy the edges
 
         for edge in self.edges:
             (node1, node2) = edge

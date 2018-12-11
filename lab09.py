@@ -26,8 +26,6 @@ def multiply_factors(phi1, phi2):
     common_variables = [var for var in phi2.vars if var in phi1.vars]
     for value1, p1 in phi1.values.items():
         for value2, p2 in phi2.values.items():
-            # values = []
-            # print("Trying tuples " + str(value1) + ", " + str(value2))
             ok = True
             for var in variables:
                 if var in common_variables:
@@ -40,7 +38,6 @@ def multiply_factors(phi1, phi2):
                     for elem in phi2_enum:
                         if elem[1] == var:
                             var_index2 = elem[0]
-                    # print(var + " " + str(var_index1) + " " + str(var_index2))
                     if value1[var_index1] != value2[var_index2]:
                         ok = False  # values are different for the common variable(s)
                         break
@@ -57,21 +54,17 @@ def multiply_factors(phi1, phi2):
                         break
                 values.append(value2[var_index])
             values = tuple(values)
-            # print(str(values) + " " + str(value1) +
-            #       " " + str(value2) + " " + str(p1) + " " + str(p2))
             result.values[values] = p1 * p2
 
     return result
 
 
 def sum_out(var, phi):
-    # print(var, phi)
     assert isinstance(phi, Factor) and var in phi.vars
     # Cerinta 2:
     var_index = 0
     result_variables = [variable for variable in phi.vars if variable != var]
     result = Factor(result_variables, {})
-    # phi_enum = list(enumerate(phi.vars))
     for index, variable in enumerate(phi.vars):
         if variable == var:
             var_index = index
@@ -93,7 +86,6 @@ def prod_sum(var, Phi, verbose=False):
     tmp_phi = None
     result = []
     for phi in Phi:
-        # print(phi)
         if var not in phi.vars:
             result.append(phi)
             if verbose:
@@ -108,13 +100,10 @@ def prod_sum(var, Phi, verbose=False):
             tmp_phi = multiply_factors(tmp_phi, phi)
             if verbose:
                 print(tmp_phi)
-        # print(tmp_phi)
-    # print(var, tmp_phi)
     if tmp_phi:
         result.append(sum_out(var, tmp_phi))
         if verbose:
             print(sum_out(var, tmp_phi))
-    # print(result)
 
     return result
 
